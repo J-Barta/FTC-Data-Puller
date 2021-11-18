@@ -117,7 +117,7 @@ public class Main {
             String outputSheet = reader.readLine();
 
             List<List<Object>> stats = sheetsInterface.retrieveStats(sheet +"!B2:P", id, teamSheet + "!A2:A");
-            sheetsInterface.updateSheetValues(id, sheetsInterface.cellRange(outputSheet, stats.size() + 1, 11), "RAW",
+            sheetsInterface.updateSheetValues(id, sheetsInterface.cellRange(outputSheet, stats.size() + 1, 12), "RAW",
                     sheetsInterface.makeCellsFromScoutingData(stats, new ArrayList<>() {{
                         add("Team Number");
                         add("Preload success");
@@ -130,6 +130,7 @@ public class Main {
                         add("Average shared");
                         add("Capping success");
                         add("endgame duck average");
+                        add("endgame park average");
                     }}));
         } else {
             System.out.println("You've entered an invalid option. Rerun the program");

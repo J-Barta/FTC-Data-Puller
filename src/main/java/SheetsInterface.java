@@ -131,32 +131,36 @@ public class SheetsInterface {
             double duckAttempts = 0;
             double totalEndDucks = 0;
 
-            for(List<Object> s : teamStats) {
-                preLoadSuccess += s.get(14) == "Yes" ? 1 : 0;
+            double endPark = 0;
 
-                String parkType = (String) s.get(1);
+            for(List<Object> s : teamStats) {
+                preLoadSuccess += s.get(3) == "Yes" ? 1 : 0;
+
+                String parkType = (String) s.get(5);
 
                 boolean completePark = (parkType == "Completely in warehouse") || (parkType == "Completely in warehouse offset") || (parkType == "Completely in storage unit");
                 successfulPark += (completePark) ? 1 : 0;
 
-                String autoDuck = (String) s.get(2);
-                boolean triedDuck = (autoDuck  == "Yes") || (autoDuck == "Failed");
+                String autoDuck = (String) s.get(4);
+                boolean triedDuck = ("Yes".equals(autoDuck)) || ("Failed".equals(autoDuck));
                 autonDuckTries += triedDuck ? 1 : 0;
-                autonDuckSuccess += (autoDuck == "Yes") ? 1 : 0;
+                autonDuckSuccess += "Yes".equals(autoDuck) ? 1 : 0;
 
-                totalExtraFreight += parseInt((String) s.get(3));
-                totalHighFreight += parseInt((String) s.get(4));
-                totalMidFreight += parseInt((String) s.get(5));
-                totalLowFrieght += parseInt((String) s.get(6));
-                totalSharedFreight += parseInt((String) s.get(7));
+                totalExtraFreight += parseInt((String) s.get(6));
+                totalHighFreight += parseInt((String) s.get(7));
+                totalMidFreight += parseInt((String) s.get(8));
+                totalLowFrieght += parseInt((String) s.get(9));
+                totalSharedFreight += parseInt((String) s.get(10));
 
-                caps += s.get(8) == "Yes" ? 1 : 0;
+                caps += s.get(13) == "Yes" ? 1 : 0;
 
                 //Endgame ducks
-                String endDuck = (String) s.get(9);
-                duckAttempts += (endDuck == "Yes") ? 1 : 0;
-                totalEndDucks += (endDuck == "Yes") ? (double) s.get(10) : 0;
+                String endDuck = (String) s.get(11);
+                duckAttempts += ("Yes".equals(endDuck)) ? 1 : 0;
+                totalEndDucks += ("Yes".equals(endDuck)) ? Double.parseDouble((String) s.get(12)) : 0;
 
+                //Endgame Parking
+                 endPark += ("Yes".equals(s.get(14))) ? 1 : 0;
             }
 
             List<Object> addList = new ArrayList<>();
@@ -167,7 +171,7 @@ public class SheetsInterface {
                 //Preload success rate
                 addList.add(Double.toString(preLoadSuccess / matchesPlayed));
                 //Duck Success rate
-                addList.add(Double.toString(autonDuckSuccess / autonDuckSuccess));
+                addList.add(Double.toString(autonDuckSuccess / autonDuckTries));
                 //Park Success Rate
                 addList.add(Double.toString(successfulPark / matchesPlayed));
                 //Different freight scores
@@ -180,10 +184,13 @@ public class SheetsInterface {
                 addList.add(Double.toString(caps / matchesPlayed));
                 //Endgame Ducks
                 addList.add(Double.toString(totalEndDucks / duckAttempts));
+                //Endgame Parking
+                addList.add(Double.toString(endPark / matchesPlayed));
 
             } else {
                 //TODO: Add all the other stats that I'm analyzing
                 addList.add(teamString);
+                addList.add("No stats");
                 addList.add("No stats");
                 addList.add("No stats");
                 addList.add("No stats");
