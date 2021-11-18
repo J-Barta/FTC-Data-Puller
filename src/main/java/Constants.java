@@ -2,7 +2,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class Constants {
-    public static Map<Integer, String> intToNum = new HashMap<Integer, String>() {{
+    public static Map<Integer, String> intToLetter = new HashMap<Integer, String>() {{
         put(1, "a");
         put(2, "b");
         put(3, "c");

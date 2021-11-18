@@ -10,17 +10,10 @@ import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.client.util.store.FileDataStoreFactory;
 import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.SheetsScopes;
-import com.google.api.services.sheets.v4.model.Spreadsheet;
-import com.google.api.services.sheets.v4.model.SpreadsheetProperties;
-import com.google.api.services.sheets.v4.model.UpdateValuesResponse;
-import com.google.api.services.sheets.v4.model.ValueRange;
 
 import java.io.*;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.*;
 import java.security.GeneralSecurityException;
-import java.sql.Array;
 import java.util.*;
 
 public class Main {
@@ -28,6 +21,8 @@ public class Main {
     private static final JsonFactory JSON_FACTORY = JacksonFactory.getDefaultInstance();
     private static final String TOKENS_DIRECTORY_PATH = "tokens";
     private static final String TOA_API_KEY = "bd382f2fbf8f7dd0cf5751f1caeac968b2d576d8cf5a9ece2b159abba4a47659";
+    static DataPuller puller;
+    static SheetsInterface sheetsInterface;
 
     /**
      * Global instance of the scopes required by this quickstart.
@@ -66,127 +61,80 @@ public class Main {
      * Prints the names and majors of students in a sample spreadsheet:
      * https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit
      */
-    public static void main(String... args) throws IOException, GeneralSecurityException {
+    public static void main(String... args) throws IOException, GeneralSecurityException, InterruptedException, URISyntaxException {
+
         // Build a new authorized API client service.
         final NetHttpTransport HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
-        final String spreadsheetId = "1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms";
-        final String range = "Class Data!A2:E";
         service = new Sheets.Builder(HTTP_TRANSPORT, JSON_FACTORY, getCredentials(HTTP_TRANSPORT))
                 .setApplicationName(APPLICATION_NAME)
                 .build();
 
-        String id = createSheet("Test Document");
-
-        List<Integer> numbers = getTeamNumbers();
-        List<String> names = getTeamNames(numbers);
-
-        updateSheetValues(id, cellRange(numbers.size(), 2),  "USER_ENTERED", makeCellsFromData(numbers, names));
-    }
-
-    public static String cellRange(int teams, int statistics) {
-        return "Sheet1!A1:" + Constants.intToNum.get(teams) + (statistics + 1);
-    }
-
-    public static List<List<Object>> makeCellsFromData(List<Integer> numbers, List<String> names) {
-        List<List<Object>> cells = new ArrayList<>();
-
-        for(int i = 0; i < numbers.size(); i++) {
-            int finalI = i;
-            cells.add(new ArrayList<Object>() {{
-                add((numbers.get(finalI).toString()));
-                add((names.get(finalI)));
-            }});
-        }
-        return cells;
-    }
-
-    public static List<String> getTeamNames(List<Integer> numbers) throws IOException {
-        List<String> names = new ArrayList<>();
-
-        for(int num : numbers) {
-            //Setup the URL
-            URL url = new URL("https://theorangealliance.org/api/team/" + num);
-            HttpURLConnection con = (HttpURLConnection) url.openConnection();
-            con.setRequestMethod("GET");
-
-            con.setRequestProperty("Content-Type", "application/json");
-            con.setRequestProperty("X-TOA-Key", TOA_API_KEY);
-            con.setRequestProperty("X-Application-Origin", "TOA Data Puller");
-
-            System.out.println(con.getResponseCode());
-
-            BufferedReader in = new BufferedReader(
-                    new InputStreamReader(con.getInputStream()));
-            String inputLine;
-            StringBuffer content = new StringBuffer();
-            while ((inputLine = in.readLine()) != null) {
-                content.append(inputLine);
-            }
-            in.close();
-
-            //con.disconnect();
-
-            names.add(content.substring(content.indexOf("\"team_name_short\":\"") + 19, content.indexOf("\",\"team_name_long\"")));
-        }
-
-
-        return names;
-    }
-
-
-    public static List<Integer> getTeamNumbers() throws IOException {
+        puller = new DataPuller(service, TOA_API_KEY);
+        sheetsInterface = new SheetsInterface(service);
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
 
-        System.out.println("Please enter the team names you would like to pull data for. \n Press enter after each one and type 'end' when you are finished");
+        System.out.println("Please enter the document ID of the spreadsheet you'd like to use");
+        String id = reader.readLine();
 
-        List<String> numberStrings = new ArrayList<>();
+        System.out.println("Please enter the option you would like to use:" +
+                "\nTo update team stats (including this competition): 'update'" +
+                "\nTo pull match stats and format them into a new sheet: 'matches'");
+        String choice = reader.readLine();
 
-        String currentString = "null";
+        if (choice.toLowerCase().contains("update")) {
+            System.out.println("Please enter the event key (in the URL of the Orange Alliance" );
 
-        while(!currentString.contains("end")) {
-            currentString = reader.readLine();
-            numberStrings.add(currentString);
+            String title = reader.readLine();
+            //reader.close();
+
+            List<Integer> numbers = puller.getTeamsInEvent(title);
+            List<String> names = puller.getTeamNames(numbers);
+            List<List<String>> stats = puller.getStats(numbers);
+
+            //String id = "1Un2xhSQ3o9lmKDpIL8uNcFfzvpKcfoxScxQuIFJBwq0";
+
+            sheetsInterface.updateSheetValues(id, sheetsInterface.cellRange("'Overview'", numbers.size() + 1, 9),  "RAW",
+                    sheetsInterface.makeCellsfromPreliminaryData(numbers, names, stats, new ArrayList<>() {{
+                        add("Team Number");
+                        add("Team Name");
+                        add("WLT ratio");
+                        add("Average OPR");
+                        add("Top OPR");
+                        add("Average Ranking Points");
+                        add("Top Ranking Points");
+                        add("Average Rank");
+                        add("Top Rank");
+                    }}));
+        } else if(choice.toLowerCase().contains("matches")) {
+            //TODO: Take in all the match data and format to work
+            System.out.println("Please enter the name of the sheet you would like to pull stats from");
+            String sheet = reader.readLine();
+
+            System.out.println("Please enter the name of the sheet you would like to pull the team names from");
+            String teamSheet = reader.readLine();
+
+            System.out.println("Please enter the name of the sheet you would like to place the averaged stats into");
+            String outputSheet = reader.readLine();
+
+            List<List<Object>> stats = sheetsInterface.retrieveStats(sheet +"!B2:P", id, teamSheet + "!A2:A");
+            sheetsInterface.updateSheetValues(id, sheetsInterface.cellRange(outputSheet, stats.size() + 1, 11), "RAW",
+                    sheetsInterface.makeCellsFromScoutingData(stats, new ArrayList<>() {{
+                        add("Team Number");
+                        add("Preload success");
+                        add("Duck Success");
+                        add("Park Success");
+                        add("Average extra");
+                        add("Average high");
+                        add("Average mid");
+                        add("Average low");
+                        add("Average shared");
+                        add("Capping success");
+                        add("endgame duck average");
+                    }}));
+        } else {
+            System.out.println("You've entered an invalid option. Rerun the program");
         }
 
-        System.out.println("ended");
-        numberStrings.remove("end");
-
-        List<Integer> numbers = new ArrayList<>();
-
-        for(String i : numberStrings) {
-            numbers.add(Integer.parseInt(i));
-        }
-
-        return numbers;
-    }
-
-    public static String createSheet(String title) throws IOException {
-
-        // [START sheets_create]
-        Spreadsheet spreadsheet = new Spreadsheet()
-                .setProperties(new SpreadsheetProperties()
-                        .setTitle(title));
-        spreadsheet = service.spreadsheets().create(spreadsheet)
-                .setFields("spreadsheetId")
-                .execute();
-        System.out.println("Spreadsheet ID: " + spreadsheet.getSpreadsheetId());
-        // [END sheets_create]
-        return spreadsheet.getSpreadsheetId();
-    }
-
-    public static UpdateValuesResponse updateSheetValues(String spreadsheetId, String range,
-                                                         String valueInputOption, List<List<Object>> _values)
-            throws IOException {
-        List<List<Object>> values = _values;
-        // [END_EXCLUDE]
-        ValueRange body = new ValueRange()
-                .setValues(values);
-        UpdateValuesResponse result =
-                service.spreadsheets().values().update(spreadsheetId, range, body)
-                        .setValueInputOption(valueInputOption)
-                        .execute();
-        System.out.printf("%d cells updated.", result.getUpdatedCells());
-        // [END sheets_update_values]
-        return result;
+        reader.close();
     }
 }
