@@ -7,12 +7,11 @@ apply plugin: 'application'
 mainClassName = 'Main'
 sourceCompatibility = 15
 targetCompatibility = 15
-version = '1.0 - Beta'
+version = '1.0-Beta'
 
 repositories {
     mavenCentral()
 }
-
 
 dependencies {
     implementation 'com.google.api-client:google-api-client:1.30.4'
@@ -22,5 +21,5 @@ dependencies {
 }
 
 shadowJar {
-    archiveBaseName.set('Data Puller')
+    archiveBaseName.set('FTC Scouting Utility')
 }

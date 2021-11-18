@@ -10,6 +10,7 @@ import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.client.util.store.FileDataStoreFactory;
 import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.SheetsScopes;
+import org.apache.http.util.VersionInfo;
 
 import java.io.*;
 import java.net.*;
@@ -23,6 +24,7 @@ public class Main {
     private static final String TOA_API_KEY = "bd382f2fbf8f7dd0cf5751f1caeac968b2d576d8cf5a9ece2b159abba4a47659";
     static DataPuller puller;
     static SheetsInterface sheetsInterface;
+    public static final String VERSION = "1.0-Beta";
 
     /**
      * Global instance of the scopes required by this quickstart.
@@ -72,6 +74,10 @@ public class Main {
         puller = new DataPuller(service, TOA_API_KEY);
         sheetsInterface = new SheetsInterface(service);
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+
+        Thread.sleep(1000);
+
+        System.out.println("------ FTC Data Puller - v." + VERSION + " -----");
 
         System.out.println("Please enter the document ID of the spreadsheet you'd like to use");
         String id = reader.readLine();
