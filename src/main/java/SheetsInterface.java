@@ -20,7 +20,7 @@ public class SheetsInterface {
         return sheet + "!A1:" + Constants.intToLetter.get(statistics) + (teams);
     }
 
-    public List<List<Object>> makeCellsfromPreliminaryData(List<Integer> numbers, List<String> names, List<List<String>> stats, List<Object> statsNames) {
+    public List<List<Object>> makeCellsfromPreliminaryData(List<Integer> numbers, List<List<String>> stats, List<Object> statsNames) {
         List<List<Object>> cells = new ArrayList<>();
 
         cells.add(statsNames);
@@ -28,13 +28,8 @@ public class SheetsInterface {
         for(int i = 0; i < numbers.size(); i++) {
             int finalI = i;
             cells.add(new ArrayList<Object>() {{
-                add((numbers.get(finalI).toString()));
-                add((names.get(finalI)));
                 for(int o = 0; o < stats.size(); o++) {
-                    System.out.println("Stats.size() " + stats.size());
-                    System.out.println("Current stat size" + stats.get(o).size());
-                    System.out.println("o " + o);
-                    System.out.println("i " + finalI);
+                    System.out.println(stats.get(o));
                     add((stats.get(o).get(finalI)));
                 }
             }});

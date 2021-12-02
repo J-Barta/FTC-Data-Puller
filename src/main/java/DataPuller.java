@@ -3,14 +3,9 @@ import com.google.api.services.sheets.v4.Sheets;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-import javax.swing.plaf.basic.BasicInternalFrameTitlePane;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -20,21 +15,26 @@ import java.util.List;
 
 public class DataPuller {
     Sheets service;
-    String TOA_API_KEY;
+    List<String> TOA_API_KEYS;
     HttpClient client;
+    int totalRequests;
+    int activeKey;
 
-    public DataPuller(Sheets service, String TOA_API_KEY) {
+    public DataPuller(Sheets service, List<String> TOA_API_KEY) {
         this.service = service;
-        this.TOA_API_KEY = TOA_API_KEY;
+        this.TOA_API_KEYS = TOA_API_KEY;
         client = HttpClient.newHttpClient();
-
+        totalRequests = 0;
+        activeKey = 0;
     }
 
-    public List<List<String>> getStats(List<Integer> numbers) throws IOException, InterruptedException, URISyntaxException {
+    public List<List<String>> getStats(List<Integer> numbersIn) throws IOException, InterruptedException, URISyntaxException {
 
         System.out.println("Retrieving Team Statistics...");
 
         //The Stats I'll be pulling
+        List<String> numbers = new ArrayList<>();
+        List<String> names = new ArrayList<>();
         List<String> WLT = new ArrayList<>();
         List<String> avgOPR = new ArrayList<>();
         List<String> topOPR = new ArrayList<>();
@@ -46,29 +46,28 @@ public class DataPuller {
         List<Stats[]> stats = new ArrayList<>();
 
         //Pull all the stats from orange alliance
-        for(int num : numbers) {
+        for(int num : numbersIn) {
             //Setup the URL
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(new URI("https://theorangealliance.org/api/team/" + num + "/results/2122"))
-                    .header("Content-Type", "application/json")
-                    .header("X-TOA-Key", TOA_API_KEY)
-                    .header("X-Application-Origin", "TOA Data Puller")
-                    .GET()
-                    .build();
 
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            System.out.println("Current number " + num);
 
-            System.out.println(response.body());
+            String response = makeTOARequest("https://theorangealliance.org/api/team/" + num + "/results/2122");
 
-            Thread.sleep(2000);
+            System.out.println(response);
 
             Gson gson = new GsonBuilder().create();
-            stats.add(gson.fromJson(response.body(), Stats[].class));
+            stats.add(gson.fromJson(response, Stats[].class));
         }
 
         //Do the calculations for the stats
+        int index = 0;
         for(Stats[] statArr : stats) {
             if(statArr.length != 0) {
+                if(!numbers.contains(Integer.toString(statArr[0].team.team_number))) {
+//                    System.out.println("Added team " + statArr[0].team.team_number + ", " + statArr[0].team.team_name_short);
+                    numbers.add(Integer.toString(statArr[0].team.team_number));
+                    names.add(statArr[0].team.team_name_short);
+                }
                 int events = 0;
 
                 int wins = 0;
@@ -83,8 +82,10 @@ public class DataPuller {
 
                 int totalRP = 0;
                 int bestRP = -500;
-
+                int statIndex = 0;
                 for(Stats stat : statArr) {
+
+                    statIndex++;
                     events++;
 
                     //WLT Ratio
@@ -120,9 +121,18 @@ public class DataPuller {
                 avgRank.add(Double.toString(totalRank / ((double) events)));
                 topRank.add(Double.toString(bestRank));
 
-
             } else {
                 //Set all stats to "NA"
+                numbers.add(Integer.toString(numbersIn.get(index)));
+
+                Gson gson = new GsonBuilder().create();
+                String response = makeTOARequest("https://theorangealliance.org/api/team/" + numbersIn.get(index));
+                //System.out.println(response);
+                Team[] team = gson.fromJson(response, Team[].class);
+                names.add(team[0].team_name_short);
+
+//                System.out.println("Added team with no event " + Integer.toString(numbersIn.get(index)) + ", " + team[0].team_name_short);
+
                 WLT.add("N/A");
                 avgOPR.add("0");
                 topOPR.add("0");
@@ -131,9 +141,13 @@ public class DataPuller {
                 avgRank.add("0");
                 topRank.add("0");
             }
+
+            index++;
         }
 
-        List<List<String>> returnValue = new ArrayList<>() {{
+        List<List<String>> returnList = new ArrayList<>() {{
+            add(numbers);
+            add(names);
             add(WLT);
             add(avgOPR);
             add(topOPR);
@@ -145,97 +159,51 @@ public class DataPuller {
 
         Thread.sleep(5000);
 
-        return returnValue;
-    }
-
-
-    public List<String> getTeamNames(List<Integer> numbers) throws IOException, InterruptedException, URISyntaxException {
-        System.out.println("Retrieving Team Names");
-
-        List<String> names = new ArrayList<>();
-
-        for(int num : numbers) {
-            //Setup the URL
-            URL url = new URL("https://theorangealliance.org/api/team/" + num);
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(new URI("https://theorangealliance.org/api/team/" + num))
-                    .header("Content-Type", "application/json")
-                    .header("X-TOA-Key", TOA_API_KEY)
-                    .header("X-Application-Origin", "TOA Data Puller")
-                    .GET()
-                    .build();
-
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
-            String responseString = response.body();
-
-            String teamName = responseString.substring(responseString.indexOf("\"team_name_short\":\"") + 19, responseString.indexOf("\",\"team_name_long\""));
-            names.add(teamName);
-            System.out.println(teamName);
-
-            Thread.sleep(2000);
-        }
-        return names;
-
-    }
-
-
-    public List<Integer> getTeamNumbers() throws IOException {
-        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-
-        System.out.println("Please enter the team names you would like to pull data for. \n Press enter after each one and type 'end' when you are finished");
-
-        List<String> numberStrings = new ArrayList<>();
-
-        String currentString = "null";
-
-        while(!currentString.contains("end")) {
-            currentString = reader.readLine();
-            numberStrings.add(currentString);
-        }
-
-        System.out.println("ended");
-        numberStrings.remove("end");
-
-        List<Integer> numbers = new ArrayList<>();
-
-        for(String i : numberStrings) {
-            numbers.add(Integer.parseInt(i));
-        }
-
-        return numbers;
+        return returnList;
     }
 
     public List<Integer> getTeamsInEvent(String eventKey) throws IOException, URISyntaxException, InterruptedException {
 
         System.out.println("Retrieving teams in the event...");
 
-        HttpRequest request = HttpRequest.newBuilder()
-            .uri(new URI("https://theorangealliance.org/api/event/" + eventKey + "/teams"))
-            .header("Content-Type", "application/json")
-            .header("X-TOA-Key", TOA_API_KEY)
-            .header("X-Application-Origin", "TOA Data Puller")
-            .GET()
-            .build();
-
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
         Gson gson = new GsonBuilder().create();
-        Team[] teams = gson.fromJson(response.body(), Team[].class);
+        TeamWrapper[] teams = gson.fromJson(makeTOARequest("https://theorangealliance.org/api/event/" + eventKey + "/teams"), TeamWrapper[].class);
 
         List<Integer> numbers = new ArrayList<>();
         for(int i =0; i < teams.length; i++) {
-            numbers.add(Integer.parseInt(teams[i].team_number));
-            //System.out.println(teams[i].team_number);
+            numbers.add(teams[i].team.team_number);
+            System.out.println(teams[i].team.team_number);
         }
 
         Collections.sort(numbers);
 
-        //System.out.println(numbers.size());
-
         Thread.sleep(2000);
 
         return numbers;
+    }
+
+    String makeTOARequest(String link) throws URISyntaxException, IOException, InterruptedException {
+        totalRequests++;
+        if(((double) totalRequests ) % (30.0 * TOA_API_KEYS.size()) == 0) {
+            activeKey = 0;
+//            System.out.println("Switched back to key 0");
+            System.out.println("Waiting for 1 minute to avoid sending too many requests");
+            Thread.sleep(60000);
+        } else if(totalRequests % 30 == 0) {
+            activeKey++;
+//            System.out.println("Switched to API KEY: " + activeKey);
+        }
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(new URI(link))
+                .header("Content-Type", "application/json")
+                .header("X-TOA-Key", TOA_API_KEYS.get(activeKey))
+                .header("X-Application-Origin", "TOA Data Puller")
+                .GET()
+                .build();
+
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+        return response.body();
     }
 
 }
@@ -249,8 +217,9 @@ class Stats {
     int ties;
     int highest_qual_score;
     int ranking_points;
+    Team team;
 
-    public Stats(int rank, double opr, double np_opr, int wins, int losses, int ties, int highest_qual_score, int ranking_points) {
+    public Stats(int rank, double opr, double np_opr, int wins, int losses, int ties, int highest_qual_score, int ranking_points, Team team) {
         this.rank = rank;
         this.opr = opr;
         this.np_opr = np_opr;
@@ -259,21 +228,27 @@ class Stats {
         this.ties = ties;
         this.highest_qual_score = highest_qual_score;
         this.ranking_points = ranking_points;
+        this.team = team;
     }
 }
 
 class Team {
+    int team_number;
+    String team_name_short;
 
-    String team_number;
-
-    public Team(String event_participant_key, String event_key, String teamKey, String teamNumber, boolean isActive, String cardStatus, Team team) {
-        this.team_number = teamNumber;
+    public Team(int team_number, String team_name_short) {
+        this.team_number = team_number;
+        this.team_name_short = team_name_short;
     }
+}
 
-    public Team() {
-        super();
+class TeamWrapper {
+
+    Team team;
+
+    public TeamWrapper(Team team) {
+        this.team = team;
     }
-
 }
 
 

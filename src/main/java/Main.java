@@ -10,18 +10,20 @@ import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.client.util.store.FileDataStoreFactory;
 import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.SheetsScopes;
-import org.apache.http.util.VersionInfo;
 
 import java.io.*;
 import java.net.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.GeneralSecurityException;
 import java.util.*;
+import java.util.stream.Stream;
 
 public class Main {
     private static final String APPLICATION_NAME = "Google Sheets API Java Quickstart";
     private static final JsonFactory JSON_FACTORY = JacksonFactory.getDefaultInstance();
     private static final String TOKENS_DIRECTORY_PATH = "tokens";
-    private static final String TOA_API_KEY = "bd382f2fbf8f7dd0cf5751f1caeac968b2d576d8cf5a9ece2b159abba4a47659";
+    private static List<String> TOA_API_KEYS;
     static DataPuller puller;
     static SheetsInterface sheetsInterface;
     public static final String VERSION = "1.0-Beta";
@@ -71,7 +73,18 @@ public class Main {
                 .setApplicationName(APPLICATION_NAME)
                 .build();
 
-        puller = new DataPuller(service, TOA_API_KEY);
+        String keyPath = "C:/program files/scout/key.txt";
+        TOA_API_KEYS = new ArrayList<>();
+
+        try (Stream<String> stream = Files.lines(Paths.get(keyPath))) {
+            stream.forEach(TOA_API_KEYS::add);
+        }
+
+        for(String key : TOA_API_KEYS) {
+            System.out.println(key);
+        }
+
+        puller = new DataPuller(service, TOA_API_KEYS);
         sheetsInterface = new SheetsInterface(service);
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
 
@@ -88,19 +101,17 @@ public class Main {
         String choice = reader.readLine();
 
         if (choice.toLowerCase().contains("update")) {
-            System.out.println("Please enter the event key (in the URL of the Orange Alliance" );
+            System.out.println("Please enter the event key (in the URL of the Orange Alliance)");
 
             String title = reader.readLine();
             //reader.close();
 
             List<Integer> numbers = puller.getTeamsInEvent(title);
-            List<String> names = puller.getTeamNames(numbers);
+            System.out.println("Numbers length: " + numbers.size());
             List<List<String>> stats = puller.getStats(numbers);
 
-            //String id = "1Un2xhSQ3o9lmKDpIL8uNcFfzvpKcfoxScxQuIFJBwq0";
-
             sheetsInterface.updateSheetValues(id, sheetsInterface.cellRange("'Overview'", numbers.size() + 1, 9),  "RAW",
-                    sheetsInterface.makeCellsfromPreliminaryData(numbers, names, stats, new ArrayList<>() {{
+                    sheetsInterface.makeCellsfromPreliminaryData(numbers, stats, new ArrayList<>() {{
                         add("Team Number");
                         add("Team Name");
                         add("WLT ratio");
