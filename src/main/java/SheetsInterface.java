@@ -20,6 +20,10 @@ public class SheetsInterface {
         return sheet + "!A1:" + Constants.intToLetter.get(statistics) + (teams);
     }
 
+    public String cellRangeOffset(int offset, String sheet, int teams, int statistics) {
+        return sheet + "!" + Constants.intToLetter.get(offset) + "1:" + Constants.intToLetter.get(statistics) + (teams);
+    }
+
     public List<List<Object>> makeCellsfromPreliminaryData(List<Integer> numbers, List<List<String>> stats, List<Object> statsNames) {
         List<List<Object>> cells = new ArrayList<>();
 
@@ -27,7 +31,7 @@ public class SheetsInterface {
 
         for(int i = 0; i < numbers.size(); i++) {
             int finalI = i;
-            cells.add(new ArrayList<Object>() {{
+            cells.add(new ArrayList<>() {{
                 for(int o = 0; o < stats.size(); o++) {
                     System.out.println(stats.get(o));
                     add((stats.get(o).get(finalI)));
@@ -129,11 +133,11 @@ public class SheetsInterface {
             double endPark = 0;
 
             for(List<Object> s : teamStats) {
-                preLoadSuccess += s.get(3) == "Yes" ? 1 : 0;
+                preLoadSuccess += "Yes".equals(s.get(3)) ? 1 : 0;
 
                 String parkType = (String) s.get(5);
 
-                boolean completePark = (parkType == "Completely in warehouse") || (parkType == "Completely in warehouse offset") || (parkType == "Completely in storage unit");
+                boolean completePark = (parkType.equals("Completely in warehouse")) || (parkType.equals("Completely in warehouse offset")) || (parkType.equals("Completely in storage unit"));
                 successfulPark += (completePark) ? 1 : 0;
 
                 String autoDuck = (String) s.get(4);
@@ -147,7 +151,7 @@ public class SheetsInterface {
                 totalLowFrieght += parseInt((String) s.get(9));
                 totalSharedFreight += parseInt((String) s.get(10));
 
-                caps += s.get(13) == "Yes" ? 1 : 0;
+                caps += "Yes".equals(s.get(13)) ? 1 : 0;
 
                 //Endgame ducks
                 String endDuck = (String) s.get(11);
@@ -166,7 +170,8 @@ public class SheetsInterface {
                 //Preload success rate
                 addList.add(Double.toString(preLoadSuccess / matchesPlayed));
                 //Duck Success rate
-                addList.add(Double.toString(autonDuckSuccess / autonDuckTries));
+                double autoDuckSuccessRate = autonDuckTries == 0 ? 0.0 : autonDuckSuccess / autonDuckTries;
+                addList.add(Double.toString(autoDuckSuccessRate));
                 //Park Success Rate
                 addList.add(Double.toString(successfulPark / matchesPlayed));
                 //Different freight scores
@@ -178,7 +183,8 @@ public class SheetsInterface {
                 //Capping sucess rate
                 addList.add(Double.toString(caps / matchesPlayed));
                 //Endgame Ducks
-                addList.add(Double.toString(totalEndDucks / duckAttempts));
+                double endGameDuckSuccess = duckAttempts == 0 ? 0.0 : totalEndDucks / duckAttempts;
+                addList.add(Double.toString(endGameDuckSuccess));
                 //Endgame Parking
                 addList.add(Double.toString(endPark / matchesPlayed));
 

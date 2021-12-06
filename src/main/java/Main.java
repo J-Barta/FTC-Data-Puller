@@ -134,7 +134,7 @@ public class Main {
             String outputSheet = reader.readLine();
 
             List<List<Object>> stats = sheetsInterface.retrieveStats(sheet +"!B2:P", id, teamSheet + "!A2:A");
-            sheetsInterface.updateSheetValues(id, sheetsInterface.cellRange(outputSheet, stats.size() + 1, 12), "RAW",
+            sheetsInterface.updateSheetValues(id, sheetsInterface.cellRangeOffset(1, outputSheet, stats.size() + 1, 12), "RAW",
                     sheetsInterface.makeCellsFromScoutingData(stats, new ArrayList<>() {{
                         add("Team Number");
                         add("Preload success");
