@@ -31,10 +31,6 @@ public class SheetsInterface {
                 add((numbers.get(finalI).toString()));
                 add((names.get(finalI)));
                 for(int o = 0; o < stats.size(); o++) {
-                    System.out.println("Stats.size() " + stats.size());
-                    System.out.println("Current stat size" + stats.get(o).size());
-                    System.out.println("o " + o);
-                    System.out.println("i " + finalI);
                     add((stats.get(o).get(finalI)));
                 }
             }});

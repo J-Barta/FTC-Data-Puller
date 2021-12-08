@@ -82,7 +82,7 @@ public class DataPuller {
                 int bestRank = 50;
 
                 int totalRP = 0;
-                int bestRP = -500;
+                double bestRP = -500;
 
                 for(Stats stat : statArr) {
                     events++;
@@ -116,7 +116,7 @@ public class DataPuller {
                 topOPR.add(Double.toString(bestOPR));
 
                 avgRP.add(Double.toString(totalRP / ((double) events)));
-                topRP.add(Integer.toString(bestRP));
+                topRP.add(Double.toString(bestRP));
                 avgRank.add(Double.toString(totalRank / ((double) events)));
                 topRank.add(Double.toString(bestRank));
 
@@ -248,9 +248,9 @@ class Stats {
     int losses;
     int ties;
     int highest_qual_score;
-    int ranking_points;
+    double ranking_points;
 
-    public Stats(int rank, double opr, double np_opr, int wins, int losses, int ties, int highest_qual_score, int ranking_points) {
+    public Stats(int rank, double opr, double np_opr, int wins, int losses, int ties, int highest_qual_score, double ranking_points) {
         this.rank = rank;
         this.opr = opr;
         this.np_opr = np_opr;
