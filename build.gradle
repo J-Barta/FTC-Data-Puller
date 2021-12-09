@@ -1,6 +1,9 @@
 plugins {
     id 'com.github.johnrengelman.shadow' version '7.1.0'
     id 'java'
+    id 'application'
+    id 'org.openjfx.javafxplugin' version '0.0.10'
+
 }
 apply plugin: 'application'
 
@@ -21,6 +24,46 @@ dependencies {
     implementation 'org.apache.commons:commons-math3:3.5'
 }
 
+javafx {
+    version = "17"
+    modules = [ 'javafx.controls' ]
+}
+
 shadowJar {
     archiveBaseName.set('FTC Scouting Utility')
+}
+
+//// Configures plugin
+//javafx {
+//    // Points to JDK and its JavaFX libraries, also declares target runtime JDK
+////    javaRuntime = '/Library/Java/JavaVirtualMachines/jdk1.7.0_40.jdk'
+//
+//    // Application name and ID presented by target OS
+//    appID 'HelloFX'
+//    appName 'Hello World Application'
+//
+//    // Main class of application
+//    mainClass 'main.HelloFX'
+//
+//    // JVM arguments, system properties, application command line arguments
+////    jvmArgs = ['-XX:+AggressiveOpts', '-XX:CompileThreshold=1']
+////    systemProperties = ['prism.disableRegionCaching':'true']
+////    arguments = ['-l', '--fast']
+//
+////    // Keystore credentials for signing JAR
+////    // Generate key: keytool -genkey -alias release -keyalg RSA -keystore keystore.jks -keysize 2048
+////    releaseKey {
+////        alias = 'release'
+////        keyPass = getProjectProperty('keyStorePassword')
+////        keyStore = file("${System.properties['user.home']}/keystore/keystore.jks")
+////        storePass = getProjectProperty('storePassword')
+////    }
+//
+////    signingMode 'release'
+//
+//    // ...
+//}
+
+String getProjectProperty(String propertyName) {
+    project.hasProperty(propertyName) ? project.property(propertyName) : null
 }
