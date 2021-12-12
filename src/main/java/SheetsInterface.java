@@ -17,7 +17,7 @@ public class SheetsInterface {
     }
 
     public String cellRange(String sheet, int teams, int statistics) {
-        return sheet + "!A1:" + Constants.intToLetter.get(statistics) + (teams);
+        return sheet + "!C1:" + Constants.intToLetter.get(statistics + 2) + (teams);
     }
 
     public String cellRangeOffset(int offset, String sheet, int teams, int statistics) {

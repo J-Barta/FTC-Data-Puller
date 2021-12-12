@@ -81,7 +81,7 @@ public class DataPuller {
                 int bestRank = 50;
 
                 int totalRP = 0;
-                int bestRP = -500;
+                double bestRP = -500;
                 int statIndex = 0;
                 for(Stats stat : statArr) {
 
@@ -184,15 +184,13 @@ public class DataPuller {
 
     String makeTOARequest(String link) throws URISyntaxException, IOException, InterruptedException {
         totalRequests++;
-        if(((double) totalRequests ) % (30.0 * TOA_API_KEYS.size()) == 0) {
+        if(((double) totalRequests ) % 30 == 0) {
             activeKey = 0;
 //            System.out.println("Switched back to key 0");
             System.out.println("Waiting for 1 minute to avoid sending too many requests");
             Thread.sleep(60000);
-        } else if(totalRequests % 30 == 0) {
-            activeKey++;
-//            System.out.println("Switched to API KEY: " + activeKey);
         }
+
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(new URI(link))
                 .header("Content-Type", "application/json")
@@ -216,10 +214,10 @@ class Stats {
     int losses;
     int ties;
     int highest_qual_score;
-    int ranking_points;
+    double ranking_points;
     Team team;
 
-    public Stats(int rank, double opr, double np_opr, int wins, int losses, int ties, int highest_qual_score, int ranking_points, Team team) {
+    public Stats(int rank, double opr, double np_opr, int wins, int losses, int ties, int highest_qual_score, double ranking_points, Team team) {
         this.rank = rank;
         this.opr = opr;
         this.np_opr = np_opr;
