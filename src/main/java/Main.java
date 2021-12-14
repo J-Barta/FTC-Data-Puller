@@ -101,16 +101,30 @@ public class Main {
         String choice = reader.readLine();
 
         if (choice.toLowerCase().contains("update")) {
-            System.out.println("Please enter the event key (in the URL of the Orange Alliance)");
+            System.out.println("Please enter the name of the sheet of the spreadsheet you want to use");
+            String sheet = reader.readLine();
 
-            String title = reader.readLine();
-            //reader.close();
+            List<Integer> numbers = new ArrayList<>();
+            System.out.println("Enter 'event' to pull a TOA event, or 'teams' to enter individual teams");
+            String numberType = reader.readLine();
+            if(numberType.equals("event")) {
+                System.out.println("Please enter the event key (in the URL of the Orange Alliance)");
+                String title = reader.readLine();
+                numbers = puller.getTeamsInEvent(title);
+            } else {
+                System.out.println("Please enter each team separated by a line. Type 'done' when finished");
+                String input = reader.readLine();
+                while(!input.equalsIgnoreCase("done")) {
+                    numbers.add(Integer.parseInt(input));
+                    input = reader.readLine();
+                }
+            }
 
-            List<Integer> numbers = puller.getTeamsInEvent(title);
             System.out.println("Numbers length: " + numbers.size());
+            System.out.println("Numbers" + numbers);
             List<List<String>> stats = puller.getStats(numbers);
 
-            sheetsInterface.updateSheetValues(id, sheetsInterface.cellRange("'Overview'", numbers.size() + 1, 9),  "RAW",
+            sheetsInterface.updateSheetValues(id, sheetsInterface.cellRange("'" + sheet + "'", numbers.size() + 1, 9),  "RAW",
                     sheetsInterface.makeCellsfromPreliminaryData(numbers, stats, new ArrayList<>() {{
                         add("Team Number");
                         add("Team Name");
