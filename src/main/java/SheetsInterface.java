@@ -20,6 +20,10 @@ public class SheetsInterface {
         return sheet + "!C1:" + Constants.intToLetter.get(statistics + 2) + (teams);
     }
 
+    public String cellRangeSchedule(String sheet, int matches) {
+        return sheet + "!A1:E" + matches;
+    }
+
     public String cellRangeOffset(int offset, String sheet, int teams, int statistics) {
         return sheet + "!" + Constants.intToLetter.get(offset) + "1:" + Constants.intToLetter.get(statistics) + (teams);
     }

@@ -97,7 +97,8 @@ public class Main {
 
         System.out.println("Please enter the option you would like to use:" +
                 "\nTo update team stats (including this competition): 'update'" +
-                "\nTo pull match stats and format them into a new sheet: 'matches'");
+                "\nTo pull match stats and format them into a new sheet: 'matches'" +
+                "\nTo pull teams in the match schedule of a competition: 'match-schedule'");
         String choice = reader.readLine();
 
         if (choice.toLowerCase().contains("update")) {
@@ -163,6 +164,16 @@ public class Main {
                         add("endgame duck average");
                         add("endgame park average");
                     }}));
+        }else if(choice.toLowerCase().contains("match-schedule")) {
+            System.out.println("Please enter the name of the event");
+            String event = reader.readLine();
+            System.out.println("Please enter the name of the sheet you want data to go into");
+            String sheet = reader.readLine();
+
+            List<List<Object>> matchList = puller.getMatchSchedule(event);
+
+            sheetsInterface.updateSheetValues(id, sheetsInterface.cellRangeSchedule(sheet, matchList.size()), "RAW", matchList);
+
         } else {
             System.out.println("You've entered an invalid option. Rerun the program");
         }

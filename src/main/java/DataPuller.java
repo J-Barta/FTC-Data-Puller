@@ -1,9 +1,11 @@
 import com.google.api.services.sheets.v4.Sheets;
 
+import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
@@ -12,6 +14,7 @@ import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 
 public class DataPuller {
     Sheets service;
@@ -182,6 +185,31 @@ public class DataPuller {
         return numbers;
     }
 
+    public List<List<Object>> getMatchSchedule(String eventKey) throws URISyntaxException, IOException, InterruptedException {
+        System.out.println("Retrieving match schedule");
+
+        Gson gson = new GsonBuilder().create();
+        Type listType = new TypeToken<List<Match>>() {}.getType();
+        List<Match> matches = gson.fromJson(makeTOARequest("https://theorangealliance.org/api/event/" + eventKey + "/matches"), listType);
+
+        for(int i = 0; i< matches.size(); i++) {
+            if(!matches.get(i).match_key.toLowerCase().contains("q")) {
+                matches.remove(i);
+                i--;
+            }
+        }
+        for(Match m : matches) {
+            System.out.println(m.match_key + ": " + m.participants.get(0).team_key + ", " + m.participants.get(1).team_key + ", " + m.participants.get(2).team_key + ", " + m.participants.get(3).team_key + ", ");
+        }
+
+        List<List<Object>> matchList = new ArrayList<>();
+
+        for(Match m : matches) {
+            matchList.add(List.of(m.match_key, m.participants.get(0).team_key, m.participants.get(1).team_key, m.participants.get(2).team_key, m.participants.get(3).team_key));
+        }
+        return matchList;
+    }
+
     String makeTOARequest(String link) throws URISyntaxException, IOException, InterruptedException {
         totalRequests++;
         if(((double) totalRequests ) % 30 == 0) {
@@ -249,5 +277,22 @@ class TeamWrapper {
     }
 }
 
+class Match {
+    String match_key;
+    List<Participants> participants;
+
+    public Match(String match_key, List<Participants> participants) {
+        this.match_key = match_key;
+        this.participants = participants;
+    }
+}
+
+class Participants {
+    String team_key;
+
+    public Participants(String team_key) {
+        this.team_key = team_key;
+    }
+}
 
 
